@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#16213e">
+  <title>Flappy Bird - Bản viết lại</title>
+
+  <style>
+    :root {
+      --game-width: 400px;
+      --game-height: 600px;
+      --dark: #16213e;
+      --button: #ffca28;
+      --button-border: #f57f17;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      padding: 16px;
+      background:
+        radial-gradient(circle at top, #263b70 0, transparent 45%),
+        var(--dark);
+      color: #fff;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .game-shell {
+      position: relative;
+      width: min(var(--game-width), 100vw - 32px);
+      aspect-ratio: 2 / 3;
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 4px solid #2c3e50;
+      border-radius: 12px;
+      background: #70c5ce;
+      box-shadow: 0 14px 35px rgb(0 0 0 / 45%);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      text-align: center;
+      text-shadow: 2px 2px 4px rgb(0 0 0 / 60%);
+      pointer-events: none;
+    }
+
+    .overlay-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .overlay h1,
+    .overlay h2,
+    .overlay p {
+      margin: 0;
+    }
+
+    .overlay h1 {
+      font-size: clamp(28px, 9vw, 36px);
+    }
+
+    .overlay h2 {
+      font-size: clamp(24px, 8vw, 32px);
+    }
+
+    .game-button,
+    .developer-button,
+    .fly-button,
+    .code-button {
+      border: 0;
+      font: inherit;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .game-button {
+      padding: 10px 30px;
+      border: 3px solid var(--button-border);
+      border-radius: 10px;
+      background: var(--button);
+      color: #4e342e;
+      font-weight: 800;
+      box-shadow: 0 4px 0 #e65100, 0 6px 12px rgb(0 0 0 / 30%);
+      text-shadow: none;
+    }
+
+    .game-button:active {
+      transform: translateY(4px);
+      box-shadow: 0 0 0 #e65100;
+    }
+
+    .developer-button {
+      margin-top: 8px;
+      padding: 6px 16px;
+      border: 1px solid rgb(255 255 255 / 55%);
+      border-radius: 20px;
+      background: rgb(255 255 255 / 15%);
+      color: #fff;
+      font-size: 12px;
+      text-shadow: none;
+    }
+
+    .developer-name,
+    .unlocked-message {
+      min-height: 16px;
+      color: #ff4fa3;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .code-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .code-input {
+      width: 106px;
+      padding: 7px 9px;
+      border: 1px solid rgb(255 255 255 / 55%);
+      border-radius: 8px;
+      outline: none;
+      background: rgb(255 255 255 / 16%);
+      color: #fff;
+      font: inherit;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .code-input::placeholder {
+      color: rgb(255 255 255 / 75%);
+    }
+
+    .code-input:focus {
+      border-color: #fff;
+    }
+
+    .code-button {
+      padding: 7px 12px;
+      border-radius: 8px;
+      background: rgb(255 255 255 / 20%);
+      color: #fff;
+      font-size: 13px;
+      text-shadow: none;
+    }
+
+    .code-message {
+      min-height: 16px;
+      margin: 0;
+      font-size: 12px;
+    }
+
+    .fly-toggle {
+      position: absolute;
+      top: 13px;
+      right: 10px;
+      z-index: 2;
+    }
+
+    .fly-button {
+      padding: 5px 10px;
+      border: 2px solid #ad1457;
+      border-radius: 20px;
+      background: #ec407a;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      box-shadow: 0 3px 0 #880e4f;
+    }
+
+    .fly-button.is-off {
+      border-color: #455a64;
+      background: #78909c;
+      box-shadow: 0 3px 0 #37474f;
+    }
+
+    .fly-button:active {
+      transform: translateY(3px);
+      box-shadow: none;
+    }
+
+    .help {
+      position: absolute;
+      bottom: 10px;
+      left: 0;
+      width: 100%;
+      color: rgb(255 255 255 / 80%);
+      font-size: 11px;
+      text-align: center;
+      text-shadow: 1px 1px 2px rgb(0 0 0 / 60%);
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="game-shell" aria-label="Trò chơi Flappy Bird">
+    <canvas id="gameCanvas" width="400" height="600">
+      Trình duyệt của bạn không hỗ trợ canvas.
+    </canvas>
+
+    <section id="overlay" class="overlay" aria-live="polite"></section>
+
+    <div id="flyToggle" class="fly-toggle" hidden>
+      <button id="flyButton" class="fly-button is-off" type="button">
+        Bay tự do: TẮT
+      </button>
+    </div>
+
+    <p class="help">Space / chạm màn hình để bay</p>
+  </main>
+
+  <script>
+    "use strict";
+
+    // -----------------------------
+    // Cấu hình trò chơi
+    // -----------------------------
+    const CONFIG = Object.freeze({
+      width: 400,
+      height: 600,
+      groundHeight: 20,
+      birdX: 80,
+      birdRadius: 14,
+      gravity: 0.32,
+      flapPower: -6.8,
+      divePower: 6.8,
+      pipeGap: 150,
+      pipeWidth: 60,
+      pipeSpeed: 2.6,
+      pipeInterval: 90,
+      unlockCode: "gh23",
+      bestScoreKey: "flappyBest",
+      flyUnlockKey: "flappyFlyUnlocked"
+    });
+
+    const canvas = document.querySelector("#gameCanvas");
+    const context = canvas.getContext("2d");
+    const overlay = document.querySelector("#overlay");
+    const flyToggle = document.querySelector("#flyToggle");
+    const flyButton = document.querySelector("#flyButton");
+
+    const game = {
+      state: "ready",
+      frame: 0,
+      score: 0,
+      bestScore: readNumber(CONFIG.bestScoreKey),
+      flyUnlocked: localStorage.getItem(CONFIG.flyUnlockKey) === "1",
+      flyMode: false,
+      bird: createBird(),
+      pipes: []
+    };
+
+    // -----------------------------
+    // Khởi tạo và giao diện
+    // -----------------------------
+    function createBird() {
+      return {
+        x: CONFIG.birdX,
+        y: CONFIG.height / 2,
+        velocity: 0,
+        rotation: 0
+      };
+    }
+
+    function readNumber(key) {
+      const value = Number(localStorage.getItem(key));
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    function resetGame() {
+      game.state = "ready";
+      game.frame = 0;
+      game.score = 0;
+      game.bird = createBird();
+      game.pipes = [];
+      updateFlyButton();
+      renderOverlay();
+    }
+
+    function renderOverlay() {
+      if (game.state === "playing") {
+        overlay.innerHTML = "";
+        return;
+      }
+
+      if (game.state === "dead") {
+        overlay.innerHTML = `
+          <div class="overlay-card">
+            <h2>Game Over</h2>
+            <p>Điểm: <strong>${game.score}</strong> · Cao nhất: <strong>${game.bestScore}</strong></p>
+            <button id="restartButton" class="game-button" type="button">Chơi lại</button>
+          </div>
+        `;
+        document.querySelector("#restartButton").addEventListener("click", startOrRestart);
+        return;
+      }
+
+      const unlockContent = game.flyUnlocked
+        ? `<p class="unlocked-message">🔓 Đã mở khóa: Bay tự do</p>`
+        : `
+          <div class="code-row">
+            <input id="codeInput" class="code-input" type="text"
+              maxlength="20" placeholder="Nhập code" autocomplete="off"
+              aria-label="Mã mở khóa">
+            <button id="codeButton" class="code-button" type="button">Nhập</button>
+          </div>
+          <p id="codeMessage" class="code-message"></p>
+        `;
+
+      overlay.innerHTML = `
+        <div class="overlay-card">
+          <h1>Flappy Bird</h1>
+          <button id="startButton" class="game-button" type="button">Bắt đầu</button>
+          <p>(hoặc nhấn SPACE)</p>
+          <button id="developerButton" class="developer-button" type="button">
+            Nhà phát triển
+          </button>
+          <p id="developerName" class="developer-name"></p>
+          ${unlockContent}
+        </div>
+      `;
+
+      document.querySelector("#startButton").addEventListener("click", startOrRestart);
+      document.querySelector("#developerButton").addEventListener("click", showDeveloper);
+
+      if (!game.flyUnlocked) {
+        const input = document.querySelector("#codeInput");
+        const button = document.querySelector("#codeButton");
+        button.addEventListener("click", unlockFlyMode);
+        input.addEventListener("keydown", (event) => {
+          event.stopPropagation();
+          if (event.key === "Enter") unlockFlyMode();
+        });
+        input.addEventListener("click", (event) => event.stopPropagation());
+      }
+    }
+
+    function showDeveloper() {
+      document.querySelector("#developerName").textContent = "gh23 (kei)";
+    }
+
+    function unlockFlyMode() {
+      const input = document.querySelector("#codeInput");
+      const message = document.querySelector("#codeMessage");
+      const enteredCode = input.value.trim().toLowerCase();
+
+      if (enteredCode === CONFIG.unlockCode) {
+        game.flyUnlocked = true;
+        localStorage.setItem(CONFIG.flyUnlockKey, "1");
+        message.textContent = "Đã mở khóa!";
+        message.style.color = "#b9f6ca";
+        updateFlyButton();
+        renderOverlay();
+      } else {
+        message.textContent = "Sai code!";
+        message.style.color = "#ff5252";
+      }
+    }
+
+    function updateFlyButton() {
+      flyToggle.hidden = !game.flyUnlocked;
+      flyButton.textContent = `Bay tự do: ${game.flyMode ? "BẬT" : "TẮT"}`;
+      flyButton.classList.toggle("is-off", !game.flyMode);
+    }
+
+    function toggleFlyMode(event) {
+      event.stopPropagation();
+      if (!game.flyUnlocked) return;
+      game.flyMode = !game.flyMode;
+      updateFlyButton();
+    }
+
+    // -----------------------------
+    // Điều khiển
+    // -----------------------------
+    function startOrRestart() {
+      if (game.state === "dead") resetGame();
+
+      game.state = "playing";
+      game.bird.velocity = CONFIG.flapPower;
+      renderOverlay();
+    }
+
+    function flap() {
+      if (game.state === "ready" || game.state === "dead") {
+        startOrRestart();
+      } else {
+        game.bird.velocity = CONFIG.flapPower;
+      }
+    }
+
+    function dive() {
+      if (game.state === "playing") {
+        game.bird.velocity = CONFIG.divePower;
+      }
+    }
+
+    function handleKeyDown(event) {
+      const typing = document.activeElement?.tagName === "INPUT";
+      if (typing) return;
+
+      if (event.code === "Space") {
+        event.preventDefault();
+        flap();
+      } else if (event.key === "Shift") {
+        event.preventDefault();
+        dive();
+      }
+    }
+
+    // -----------------------------
+    // Logic trò chơi
+    // -----------------------------
+    function createPipe() {
+      const minimumTop = 60;
+      const maximumTop = CONFIG.height - CONFIG.pipeGap - 140;
+      const top = minimumTop + Math.random() * (maximumTop - minimumTop);
+      return { x: CONFIG.width, top, passed: false };
+    }
+
+    function updateGame() {
+      if (game.state !== "playing") return;
+
+      game.frame++;
+
+      if (game.flyMode) {
+        game.bird.velocity *= 0.85;
+      } else {
+        game.bird.velocity += CONFIG.gravity;
+      }
+
+      game.bird.y += game.bird.velocity;
+      game.bird.rotation = clamp(game.bird.velocity * 0.06, -0.5, 1.2);
+
+      if (game.frame % CONFIG.pipeInterval === 0) {
+        game.pipes.push(createPipe());
+      }
+
+      for (const pipe of game.pipes) {
+        pipe.x -= CONFIG.pipeSpeed;
+
+        if (!pipe.passed && pipe.x + CONFIG.pipeWidth < game.bird.x) {
+          pipe.passed = true;
+          game.score++;
+        }
+      }
+
+      game.pipes = game.pipes.filter(
+        (pipe) => pipe.x > -CONFIG.pipeWidth - 10
+      );
+
+      if (hitBounds() || hitPipe()) {
+        endGame();
+      }
+    }
+
+    function clamp(value, minimum, maximum) {
+      return Math.max(minimum, Math.min(maximum, value));
+    }
+
+    function hitBounds() {
+      const bird = game.bird;
+      return (
+        bird.y - CONFIG.birdRadius < 0 ||
+        bird.y + CONFIG.birdRadius > CONFIG.height - CONFIG.groundHeight
+      );
+    }
+
+    function hitPipe() {
+      const bird = game.bird;
+
+      return game.pipes.some((pipe) => {
+        const overlapsX =
+          bird.x + CONFIG.birdRadius > pipe.x &&
+          bird.x - CONFIG.birdRadius < pipe.x + CONFIG.pipeWidth;
+        const hitsTop = bird.y - CONFIG.birdRadius < pipe.top;
+        const hitsBottom =
+          bird.y + CONFIG.birdRadius > pipe.top + CONFIG.pipeGap;
+
+        return overlapsX && (hitsTop || hitsBottom);
+      });
+    }
+
+    function endGame() {
+      if (game.state !== "playing") return;
+
+      game.state = "dead";
+      if (game.score > game.bestScore) {
+        game.bestScore = game.score;
+        localStorage.setItem(CONFIG.bestScoreKey, String(game.bestScore));
+      }
+      renderOverlay();
+    }
+
+    // -----------------------------
+    // Vẽ game
+    // -----------------------------
+    function drawBackground() {
+      const sky = context.createLinearGradient(0, 0, 0, CONFIG.height);
+      sky.addColorStop(0, "#70c5ce");
+      sky.addColorStop(1, "#b3e5ea");
+      context.fillStyle = sky;
+      context.fillRect(0, 0, CONFIG.width, CONFIG.height);
+
+      drawClouds();
+
+      context.fillStyle = "#ded895";
+      context.fillRect(
+        0,
+        CONFIG.height - CONFIG.groundHeight,
+        CONFIG.width,
+        CONFIG.groundHeight
+      );
+      context.fillStyle = "#c9c17a";
+      context.fillRect(
+        0,
+        CONFIG.height - CONFIG.groundHeight,
+        CONFIG.width,
+        4
+      );
+    }
+
+    function drawClouds() {
+      context.fillStyle = "rgb(255 255 255 / 60%)";
+
+      for (let index = 0; index < 3; index++) {
+        const x =
+          ((game.frame * 0.3 + index * 150) % (CONFIG.width + 100)) - 50;
+        const y = 80 + index * 60;
+
+        context.beginPath();
+        context.arc(x, y, 20, 0, Math.PI * 2);
+        context.arc(x + 20, y - 5, 25, 0, Math.PI * 2);
+        context.arc(x + 45, y, 18, 0, Math.PI * 2);
+        context.fill();
+      }
+    }
+
+    function drawPipes() {
+      for (const pipe of game.pipes) {
+        const bottomY = pipe.top + CONFIG.pipeGap;
+
+        drawPipeBody(pipe.x, 0, pipe.top);
+        drawPipeCap(pipe.x, pipe.top - 20);
+
+        drawPipeBody(
+          pipe.x,
+          bottomY,
+          CONFIG.height - bottomY - CONFIG.groundHeight
+        );
+        drawPipeCap(pipe.x, bottomY);
+      }
+    }
+
+    function drawPipeBody(x, y, height) {
+      context.fillStyle = "#4caf50";
+      context.strokeStyle = "#2e7d32";
+      context.lineWidth = 3;
+      context.fillRect(x, y, CONFIG.pipeWidth, height);
+      context.strokeRect(x, y, CONFIG.pipeWidth, height);
+    }
+
+    function drawPipeCap(x, y) {
+      context.fillStyle = "#4caf50";
+      context.strokeStyle = "#2e7d32";
+      context.fillRect(x - 5, y, CONFIG.pipeWidth + 10, 20);
+      context.strokeRect(x - 5, y, CONFIG.pipeWidth + 10, 20);
+    }
+
+    function drawBird() {
+      const bird = game.bird;
+
+      context.save();
+      context.translate(bird.x, bird.y);
+      context.rotate(bird.rotation);
+
+      context.fillStyle = "#ffd54f";
+      context.strokeStyle = "#f57f17";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.ellipse(
+        0,
+        0,
+        CONFIG.birdRadius,
+        CONFIG.birdRadius * 0.8,
+        0,
+        0,
+        Math.PI * 2
+      );
+      context.fill();
+      context.stroke();
+
+      context.fillStyle = "#fbc02d";
+      context.beginPath();
+      context.ellipse(-2, 4, 7, 5, Math.PI / 6, 0, Math.PI * 2);
+      context.fill();
+
+      context.fillStyle = "#fff";
+      context.beginPath();
+      context.arc(6, -4, 4, 0, Math.PI * 2);
+      context.fill();
+
+      context.fillStyle = "#111";
+      context.beginPath();
+      context.arc(7.5, -4, 2, 0, Math.PI * 2);
+      context.fill();
+
+      context.fillStyle = "#ff7043";
+      context.beginPath();
+      context.moveTo(CONFIG.birdRadius - 2, -2);
+      context.lineTo(CONFIG.birdRadius + 8, 1);
+      context.lineTo(CONFIG.birdRadius - 2, 5);
+      context.closePath();
+      context.fill();
+
+      context.restore();
+    }
+
+    function drawScore() {
+      if (game.state !== "playing") return;
+
+      context.textAlign = "center";
+      context.font = "800 36px Arial";
+      context.lineWidth = 3;
+      context.strokeStyle = "#111";
+      context.fillStyle = "#fff";
+      context.strokeText(game.score, CONFIG.width / 2, 60);
+      context.fillText(game.score, CONFIG.width / 2, 60);
+    }
+
+    function render() {
+      updateGame();
+      drawBackground();
+      drawPipes();
+      drawBird();
+      drawScore();
+      requestAnimationFrame(render);
+    }
+
+    // -----------------------------
+    // Sự kiện và chạy game
+    // -----------------------------
+    document.addEventListener("keydown", handleKeyDown);
+    canvas.addEventListener("pointerdown", flap);
+    flyButton.addEventListener("click", toggleFlyMode);
+
+    resetGame();
+    render();
+  </script>
+</body>
+</html>
