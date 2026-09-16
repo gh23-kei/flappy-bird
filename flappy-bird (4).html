@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Flappy Bird</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    overflow: hidden;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  #stageOuter {
+    position: relative;
+  }
+  #gameWrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400px;
+    height: 600px;
+    transform-origin: top left;
+  }
+  #gameCanvas {
+    background: linear-gradient(#70c5ce, #b3e5ea);
+    border: 4px solid #2c3e50;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    cursor: pointer;
+    display: block;
+    touch-action: none;
+  }
+  #uiOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400px;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+    pointer-events: none;
+  }
+  .game-btn {
+    pointer-events: auto;
+    background: #ffca28;
+    color: #4e342e;
+    border: 3px solid #f57f17;
+    border-radius: 14px;
+    padding: 16px 40px;
+    font-size: 22px;
+    font-weight: bold;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #e65100, 0 6px 10px rgba(0,0,0,0.3);
+    text-shadow: none;
+    transition: transform 0.06s ease, box-shadow 0.06s ease;
+  }
+  .game-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #e65100, 0 2px 6px rgba(0,0,0,0.3);
+  }
+  .menu-panel {
+    pointer-events: auto;
+    background: rgba(20, 20, 35, 0.72);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 24px 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-height: 90%;
+    overflow-y: auto;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+  }
+  .dev-btn {
+    pointer-events: auto;
+    margin-top: 14px;
+    background: rgba(255,255,255,0.18);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 24px;
+    padding: 11px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    text-shadow: none;
+  }
+  .dev-btn:active {
+    background: rgba(255,255,255,0.35);
+  }
+  .code-input {
+    pointer-events: auto;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 2px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.18);
+    color: white;
+    font-size: 16px;
+    font-family: inherit;
+    width: 130px;
+    text-align: center;
+  }
+  .code-input::placeholder {
+    color: rgba(255,255,255,0.75);
+  }
+  #toggleContainer {
+    position: absolute;
+    top: 50px;
+    right: 6px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+  }
+  .fly-btn {
+    pointer-events: auto;
+    color: white;
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: bold;
+    font-family: inherit;
+    cursor: pointer;
+    border: 2px solid;
+  }
+  .fly-btn.on {
+    background: #ec407a;
+    border-color: #ad1457;
+    box-shadow: 0 3px 0 #880e4f;
+  }
+  .fly-btn.off {
+    background: #78909c;
+    border-color: #455a64;
+    box-shadow: 0 3px 0 #37474f;
+  }
+  .fly-btn.noclip.on {
+    background: #29b6f6;
+    border-color: #0277bd;
+    box-shadow: 0 3px 0 #01579b;
+  }
+  .fly-btn.speed.on {
+    background: #ffa726;
+    border-color: #e65100;
+    box-shadow: 0 3px 0 #bf360c;
+  }
+  .fly-btn.rapid.on {
+    background: #66bb6a;
+    border-color: #2e7d32;
+    box-shadow: 0 3px 0 #1b5e20;
+  }
+  .fly-btn.godhp.on {
+    background: #ab47bc;
+    border-color: #6a1b9a;
+    box-shadow: 0 3px 0 #4a148c;
+  }
+  .fly-btn:active {
+    transform: translateY(3px);
+    box-shadow: none;
+  }
+  .skin-row {
+    pointer-events: auto;
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 220px;
+  }
+  .skin-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.4);
+    cursor: pointer;
+  }
+  .skin-swatch.selected {
+    border-color: white;
+    box-shadow: 0 0 8px white;
+  }
+  .name-input {
+    pointer-events: auto;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 2px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.18);
+    color: white;
+    font-size: 15px;
+    font-family: inherit;
+    width: 160px;
+    text-align: center;
+  }
+  .board-list {
+    pointer-events: auto;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    max-height: 260px;
+    overflow-y: auto;
+    width: 240px;
+  }
+  .board-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+  }
+  #touchControls {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+    width: 400px;
+    display: none;
+    justify-content: space-between;
+    padding: 0 24px;
+    box-sizing: border-box;
+    z-index: 20;
+  }
+  .move-btn {
+    pointer-events: auto;
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    border: 3px solid rgba(255,255,255,0.6);
+    color: white;
+    font-size: 38px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .move-btn:active {
+    background: rgba(255,255,255,0.45);
+    transform: scale(0.94);
+  }
+  .dialogue-line {
+    pointer-events: auto;
+    text-align: left;
+    margin: 6px 0;
+    font-size: 14px;
+    line-height: 1.4;
+    background: rgba(255,255,255,0.1);
+    padding: 8px 12px;
+    border-radius: 10px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+</style>
+</head>
+<body>
+<div id="stageOuter">
+  <div id="gameWrapper">
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="uiOverlay"></div>
+    <div id="toggleContainer">
+      <button class="fly-btn off" id="flyToggleBtn" style="display:none;">Bay tự do: TẮT</button>
+      <button class="fly-btn noclip off" id="noclipToggleBtn" style="display:none;">Xuyên tường: TẮT</button>
+      <button class="fly-btn speed off" id="speedToggleBtn" style="display:none;">Tốc độ nhanh: TẮT</button>
+      <button class="fly-btn rapid off" id="rapidToggleBtn" style="display:none;">Bắn nhanh (M2): TẮT</button>
+      <button class="fly-btn godhp off" id="godHpToggleBtn" style="display:none;">Vô hạn máu (M2): TẮT</button>
+    </div>
+    <div id="touchControls">
+      <button class="move-btn" id="downBtn">▼</button>
+      <button class="move-btn" id="upBtn">▲</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('uiOverlay');
+
+const W = canvas.width;
+const H = canvas.height;
+
+// ---------- Responsive scaling for mobile ----------
+const stageOuter = document.getElementById('stageOuter');
+const gameWrapper = document.getElementById('gameWrapper');
+function resizeStage() {
+  const maxW = window.innerWidth * 0.94;
+  const maxH = window.innerHeight * 0.92;
+  const scale = Math.min(maxW / W, maxH / H, 1);
+  gameWrapper.style.transform = 'scale(' + scale + ')';
+  stageOuter.style.width = (W * scale) + 'px';
+  stageOuter.style.height = (H * scale) + 'px';
+}
+window.addEventListener('resize', resizeStage);
+window.addEventListener('orientationchange', resizeStage);
+resizeStage();
+
+const SKINS = [
+  { name: 'Vàng cổ điển', body: '#ffd54f', dark: '#f57f17', wing: '#fbc02d', beak: '#ff7043' },
+  { name: 'Đỏ rực',       body: '#ef5350', dark: '#b71c1c', wing: '#e53935', beak: '#ffb300' },
+  { name: 'Xanh biển',    body: '#42a5f5', dark: '#0d47a1', wing: '#1e88e5', beak: '#ffca28' },
+  { name: 'Tím pastel',   body: '#ba68c8', dark: '#4a148c', wing: '#ab47bc', beak: '#ffd54f' },
+  { name: 'Hồng cute',    body: '#f06292', dark: '#880e4f', wing: '#ec407a', beak: '#ffca28' },
+  { name: 'Cầu vồng', special: 'rainbow', body: 'conic-gradient(red, orange, yellow, green, blue, violet, red)', dark: '#333333', wing: '#ffffff', beak: '#ffca28' },
+  { name: 'Vàng kim', special: 'gold', body: 'linear-gradient(135deg,#fff6cc,#ffd700,#b8860b)', dark: '#7a5c00', wing: '#fff6cc', beak: '#b8860b' },
+  { name: 'Ngân hà', special: 'galaxy', body: 'radial-gradient(circle at 30% 30%, #9c5cff, #1a0033)', dark: '#1a0033', wing: '#4a148c', beak: '#ffd700' }
+];
+
+// ---------- Stage / difficulty progression ----------
+function getStageConfig(s) {
+  if (s < 15)  return { speed: 2.6, gap: 150, sky: 'normal', maze: false, interval: 90, danger: false };
+  if (s < 30)  return { speed: 3.6, gap: 118, sky: 'red',    maze: false, interval: 78, danger: true };
+  if (s < 100) return { speed: 3.6, gap: 118, sky: 'normal', maze: false, interval: 78, danger: true };
+  if (s < 120) return { speed: 4.3, gap: 96,  sky: 'normal', maze: true,  interval: 66, danger: true };
+  return          { speed: 4.0, gap: 112, sky: 'normal', maze: false, interval: 74, danger: true };
+}
+
+let bird, pipes, score, best, gameState, frame;
+let holdUp = false, holdDown = false;
+
+// ---------- Level 2 (shooter) state ----------
+let p2, hearts, score2, best2, frame2;
+let bullets2, enemies2, enemyBullets2;
+let invulTimer = 0;
+best2 = Number(localStorage.getItem('flappyBest2')) || 0;
+
+let worldScale = 1;
+let boss = null;
+let bossTriggered = false;
+let waveActive = false, waveTimer = 0, waveTriggered = false;
+
+function getLW() { return W / worldScale; }
+function getLH() { return H / worldScale; }
+
+function resetLevel2() {
+  p2 = { x: 70, y: H / 2, vy: 0 };
+  hearts = 3;
+  score2 = 0;
+  frame2 = 0;
+  bullets2 = [];
+  enemies2 = [];
+  enemyBullets2 = [];
+  invulTimer = 0;
+  holdUp = false; holdDown = false;
+  worldScale = 1;
+  boss = null;
+  bossTriggered = false;
+  waveActive = false; waveTimer = 0; waveTriggered = false;
+}
+
+let rapidUnlocked = localStorage.getItem('flappyRapidUnlocked') === '1';
+let rapidMode = false;
+let godHpUnlocked = localStorage.getItem('flappyGodHpUnlocked') === '1';
+let godHpMode = false;
+
+let flyUnlocked = localStorage.getItem('flappyFlyUnlocked') === '1';
+let flyMode = false;
+let noclipUnlocked = localStorage.getItem('flappyNoclipUnlocked') === '1';
+let noclipMode = false;
+let speedUnlocked = localStorage.getItem('flappySpeedUnlocked') === '1';
+let speedMode = false;
+let yukiUnlocked = localStorage.getItem('flappyYukiUnlocked') === '1';
+let devPanelOpen = false;
+let levelSelectOpen = false;
+let skinIndex = Number(localStorage.getItem('flappySkinIndex')) || 0;
+
+let playerName = localStorage.getItem('flappyPlayerName') || ('Khách' + Math.floor(Math.random() * 1000));
+localStorage.setItem('flappyPlayerName', playerName);
+
+best = Number(localStorage.getItem('flappyBest')) || 0;
+
+const flyToggleBtn = document.getElementById('flyToggleBtn');
+const noclipToggleBtn = document.getElementById('noclipToggleBtn');
+const speedToggleBtn = document.getElementById('speedToggleBtn');
+const rapidToggleBtn = document.getElementById('rapidToggleBtn');
+const godHpToggleBtn = document.getElementById('godHpToggleBtn');
+
+function refreshToggleButtons() {
+  flyToggleBtn.style.display = flyUnlocked ? 'inline-block' : 'none';
+  noclipToggleBtn.style.display = noclipUnlocked ? 'inline-block' : 'none';
+  speedToggleBtn.style.display = speedUnlocked ? 'inline-block' : 'none';
+  rapidToggleBtn.style.display = rapidUnlocked ? 'inline-block' : 'none';
+  godHpToggleBtn.style.display = godHpUnlocked ? 'inline-block' : 'none';
+  flyToggleBtn.textContent = 'Bay tự do: ' + (flyMode ? 'BẬT' : 'TẮT');
+  flyToggleBtn.classList.toggle('on', flyMode);
+  flyToggleBtn.classList.toggle('off', !flyMode);
+  noclipToggleBtn.textContent = 'Xuyên tường: ' + (noclipMode ? 'BẬT' : 'TẮT');
+  noclipToggleBtn.classList.toggle('on', noclipMode);
+  noclipToggleBtn.classList.toggle('off', !noclipMode);
+  speedToggleBtn.textContent = 'Tốc độ nhanh: ' + (speedMode ? 'BẬT' : 'TẮT');
+  speedToggleBtn.classList.toggle('on', speedMode);
+  speedToggleBtn.classList.toggle('off', !speedMode);
+  rapidToggleBtn.textContent = 'Bắn nhanh (M2): ' + (rapidMode ? 'BẬT' : 'TẮT');
+  rapidToggleBtn.classList.toggle('on', rapidMode);
+  rapidToggleBtn.classList.toggle('off', !rapidMode);
+  godHpToggleBtn.textContent = 'Vô hạn máu (M2): ' + (godHpMode ? 'BẬT' : 'TẮT');
+  godHpToggleBtn.classList.toggle('on', godHpMode);
+  godHpToggleBtn.classList.toggle('off', !godHpMode);
+}
+
+flyToggleBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  flyMode = !flyMode;
+  holdUp = false; holdDown = false;
+  refreshToggleButtons();
+});
+noclipToggleBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  noclipMode = !noclipMode;
+  refreshToggleButtons();
+});
+speedToggleBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  speedMode = !speedMode;
+  refreshToggleButtons();
+});
+rapidToggleBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  rapidMode = !rapidMode;
+  refreshToggleButtons();
+});
+godHpToggleBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  godHpMode = !godHpMode;
+  refreshToggleButtons();
+});
+refreshToggleButtons();
+
+// ---------- Storage (shared leaderboard with local fallback) ----------
+async function submitScore(name, scoreVal) {
+  if (scoreVal <= 0) return;
+  const entry = { name, score: scoreVal, ts: Date.now() };
+  try {
+    const key = 'score:' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    const res = await window.storage.set(key, JSON.stringify(entry), true);
+    if (!res) throw new Error('no storage');
+  } catch (e) {
+    const local = JSON.parse(localStorage.getItem('flappyLocalBoard') || '[]');
+    local.push(entry);
+    local.sort((a, b) => b.score - a.score);
+    localStorage.setItem('flappyLocalBoard', JSON.stringify(local.slice(0, 50)));
+  }
+}
+
+async function fetchLeaderboard() {
+  try {
+    const listRes = await window.storage.list('score:', true);
+    if (!listRes || !listRes.keys) throw new Error('no storage');
+    const entries = [];
+    for (const k of listRes.keys) {
+      try {
+        const r = await window.storage.get(k, true);
+        if (r) entries.push(JSON.parse(r.value));
+      } catch (e2) { /* skip bad entry */ }
+    }
+    entries.sort((a, b) => b.score - a.score);
+    return { entries: entries.slice(0, 10), shared: true };
+  } catch (e) {
+    const local = JSON.parse(localStorage.getItem('flappyLocalBoard') || '[]');
+    local.sort((a, b) => b.score - a.score);
+    return { entries: local.slice(0, 10), shared: false };
+  }
+}
+
+function renderLeaderboardPanel() {
+  overlay.innerHTML = `<div class="menu-panel">
+    <h1 style="margin:0 0 10px;font-size:24px;">🏆 Bảng xếp hạng</h1>
+    <div class="board-list" id="boardList">Đang tải...</div>
+    <button class="game-btn" id="closeBoardBtn" style="margin-top:14px;font-size:16px;padding:10px 24px;">Đóng</button>
+  </div>`;
+  document.getElementById('closeBoardBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    gameState = 'ready';
+    updateOverlay();
+  });
+  fetchLeaderboard().then(({ entries, shared }) => {
+    const list = document.getElementById('boardList');
+    if (!list) return;
+    if (entries.length === 0) {
+      list.innerHTML = '<p style="opacity:0.8;">Chưa có điểm nào.</p>';
+    } else {
+      list.innerHTML = entries.map((e, i) =>
+        `<div class="board-row"><span>#${i + 1} ${e.name}</span><span>${e.score}</span></div>`
+      ).join('') + `<p style="margin:8px 0 0;font-size:11px;opacity:0.7;">${shared ? 'Bảng xếp hạng chung (mọi người chơi)' : 'Lưu trên máy này (chưa đồng bộ server)'}</p>`;
+    }
+  });
+}
+
+// ---------- Game setup ----------
+function resetGame() {
+  bird = { x: 80, y: H / 2, vy: 0, r: 14, rotation: 0 };
+  pipes = [];
+  score = 0;
+  frame = 0;
+  holdUp = false; holdDown = false;
+  gameState = 'ready';
+  updateOverlay();
+}
+
+function updateOverlay() {
+  document.getElementById('touchControls').style.display = (gameState === 'playing' || gameState === 'playing2') ? 'flex' : 'none';
+  if (gameState === 'ready') {
+    const skinRow = SKINS.map((s, i) =>
+      `<div class="skin-swatch${i === skinIndex ? ' selected' : ''}" data-idx="${i}" style="background:${s.body};" title="${s.name}"></div>`
+    ).join('');
+
+    overlay.innerHTML = `<div class="menu-panel">
+      <h1 style="margin:0 0 10px;font-size:32px;">Flappy Bird</h1>
+      <button class="game-btn" id="startBtn">Bắt đầu</button>
+      <p style="margin:8px 0 0;font-size:13px;opacity:0.85;">(hoặc nhấn SPACE)</p>
+
+      <input type="text" class="name-input" id="nameInput" placeholder="Tên của bạn" value="${playerName}" style="margin-top:12px;">
+
+      <button class="dev-btn" id="devBtn">Nhà phát triển</button>
+      <div id="devPanel" style="display:${devPanelOpen ? 'flex' : 'none'};flex-direction:column;align-items:center;">
+        <p style="margin:4px 0;font-size:13px;color:#ff4fa3;font-weight:bold;">gh23 (kei)</p>
+        <div class="skin-row" id="skinRow">${skinRow}</div>
+      </div>
+
+      <button class="dev-btn" id="boardBtn">🏆 Bảng xếp hạng</button>
+      ${yukiUnlocked ? `
+      <button class="dev-btn" id="levelSelectBtn" style="background:rgba(255,236,179,0.25);">🗺️ Chọn màn chơi</button>
+      <div id="levelSelectPanel" style="display:${levelSelectOpen ? 'flex' : 'none'};gap:8px;margin-top:8px;">
+        <button class="dev-btn" id="goLevel1Btn" style="margin-top:0;">Màn 1</button>
+        <button class="dev-btn" id="goLevel2Btn" style="margin-top:0;">Màn 2</button>
+      </div>` : ''}
+
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+        <input type="text" class="code-input" id="codeInput" placeholder="Nhập code">
+        <button class="dev-btn" id="codeBtn" style="margin-top:0;">Nhập</button>
+      </div>
+      <p id="codeMsg" style="margin:6px 0 0;font-size:12px;min-height:14px;"></p>
+    </div>`;
+
+    document.getElementById('startBtn').addEventListener('click', (e) => { e.stopPropagation(); flap(); });
+
+    if (yukiUnlocked) {
+      document.getElementById('levelSelectBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        levelSelectOpen = !levelSelectOpen;
+        updateOverlay();
+      });
+      if (levelSelectOpen) {
+        document.getElementById('goLevel1Btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          resetGame();
+        });
+        document.getElementById('goLevel2Btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          resetLevel2();
+          gameState = 'ready2';
+          updateOverlay();
+        });
+      }
+    }
+
+    const nameInput = document.getElementById('nameInput');
+    nameInput.addEventListener('click', (e) => e.stopPropagation());
+    nameInput.addEventListener('mousedown', (e) => e.stopPropagation());
+    nameInput.addEventListener('change', () => {
+      const v = nameInput.value.trim().slice(0, 16);
+      if (v) { playerName = v; localStorage.setItem('flappyPlayerName', playerName); }
+    });
+
+    document.getElementById('devBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      devPanelOpen = !devPanelOpen;
+      updateOverlay();
+    });
+
+    if (devPanelOpen) {
+      document.querySelectorAll('.skin-swatch').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          skinIndex = Number(el.dataset.idx);
+          localStorage.setItem('flappySkinIndex', skinIndex);
+          updateOverlay();
+        });
+      });
+    }
+
+    document.getElementById('boardBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      gameState = 'leaderboard';
+      renderLeaderboardPanel();
+    });
+
+    const codeInput = document.getElementById('codeInput');
+    const codeBtn = document.getElementById('codeBtn');
+    const codeMsg = document.getElementById('codeMsg');
+    const tryCode = () => {
+      const val = codeInput.value.trim().toLowerCase();
+      if (val === 'gh23') {
+        if (flyUnlocked) { codeMsg.style.color = '#ffca28'; codeMsg.textContent = 'Đã mở khóa rồi!'; return; }
+        flyUnlocked = true;
+        localStorage.setItem('flappyFlyUnlocked', '1');
+        refreshToggleButtons();
+        codeMsg.style.color = '#69f0ae';
+        codeMsg.textContent = 'Đã mở khóa: Bay tự do!';
+      } else if (val === 'noclip') {
+        if (noclipUnlocked) { codeMsg.style.color = '#ffca28'; codeMsg.textContent = 'Đã mở khóa rồi!'; return; }
+        noclipUnlocked = true;
+        localStorage.setItem('flappyNoclipUnlocked', '1');
+        refreshToggleButtons();
+        codeMsg.style.color = '#69f0ae';
+        codeMsg.textContent = 'Đã mở khóa: Xuyên tường!';
+      } else if (val === 'kei23') {
+        if (speedUnlocked) { codeMsg.style.color = '#ffca28'; codeMsg.textContent = 'Đã mở khóa rồi!'; return; }
+        speedUnlocked = true;
+        localStorage.setItem('flappySpeedUnlocked', '1');
+        refreshToggleButtons();
+        codeMsg.style.color = '#69f0ae';
+        codeMsg.textContent = 'Đã mở khóa: Tốc độ nhanh!';
+      } else if (val === 'yuki23') {
+        if (yukiUnlocked) { codeMsg.style.color = '#ffca28'; codeMsg.textContent = 'Đã mở khóa rồi!'; return; }
+        yukiUnlocked = true;
+        localStorage.setItem('flappyYukiUnlocked', '1');
+        codeMsg.style.color = '#69f0ae';
+        codeMsg.textContent = 'Đã mở khóa: Chọn màn chơi!';
+        updateOverlay();
+      } else if (val === 'nhanh23') {
+        if (rapidUnlocked) { codeMsg.style.color = '#ffca28'; codeMsg.textContent = 'Đã mở khóa rồi!'; return; }
+        rapidUnlocked = true;
+        localStorage.setItem('flappyRapidUnlocked', '1');
+        refreshToggleButtons();
+        codeMsg.style.color = '#69f0ae';
+        codeMsg.textContent = 'Đã mở khóa: Bắn nhanh (Màn 2)!';
+      } else if (val === 'trau23') {
+        if (godHpUnlocked) { codeMsg.style.color = '#ffca28'; codeMsg.textContent = 'Đã mở khóa rồi!'; return; }
+        godHpUnlocked = true;
+        localStorage.setItem('flappyGodHpUnlocked', '1');
+        refreshToggleButtons();
+        codeMsg.style.color = '#69f0ae';
+        codeMsg.textContent = 'Đã mở khóa: Vô hạn máu (Màn 2)!';
+      } else if (val === 'giahung23') {
+        flyUnlocked = false; flyMode = false;
+        noclipUnlocked = false; noclipMode = false;
+        speedUnlocked = false; speedMode = false;
+        yukiUnlocked = false;
+        rapidUnlocked = false; rapidMode = false;
+        godHpUnlocked = false; godHpMode = false;
+        localStorage.removeItem('flappyFlyUnlocked');
+        localStorage.removeItem('flappyNoclipUnlocked');
+        localStorage.removeItem('flappySpeedUnlocked');
+        localStorage.removeItem('flappyYukiUnlocked');
+        localStorage.removeItem('flappyRapidUnlocked');
+        localStorage.removeItem('flappyGodHpUnlocked');
+        refreshToggleButtons();
+        codeMsg.style.color = '#69f0ae';
+        codeMsg.textContent = 'Đã reset toàn bộ code!';
+      } else {
+        codeMsg.style.color = '#ff5252';
+        codeMsg.textContent = 'Sai code!';
+      }
+    };
+    codeBtn.addEventListener('click', (e) => { e.stopPropagation(); tryCode(); });
+    codeInput.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') tryCode();
+    });
+    codeInput.addEventListener('click', (e) => e.stopPropagation());
+    codeInput.addEventListener('mousedown', (e) => e.stopPropagation());
+    codeInput.addEventListener('touchstart', (e) => e.stopPropagation());
+    codeBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+    codeBtn.addEventListener('touchstart', (e) => e.stopPropagation());
+
+  } else if (gameState === 'dead') {
+    overlay.innerHTML = `<div class="menu-panel">
+      <h1 style="margin:0 0 8px;font-size:28px;">Game Over</h1>
+      <p style="margin:0 0 12px;">Điểm: ${score} | Cao nhất: ${best}</p>
+      <button class="game-btn" id="restartBtn">Chơi lại</button>
+      <button class="dev-btn" id="boardBtn2">🏆 Bảng xếp hạng</button>
+    </div>`;
+    document.getElementById('restartBtn').addEventListener('click', (e) => { e.stopPropagation(); flap(); });
+    document.getElementById('boardBtn2').addEventListener('click', (e) => {
+      e.stopPropagation();
+      gameState = 'leaderboard';
+      renderLeaderboardPanel();
+    });
+  } else if (gameState === 'cutscene') {
+    overlay.innerHTML = `<div class="menu-panel" style="max-width:260px;">
+      <h2 style="margin:0 0 12px;font-size:20px;">🎬 ...</h2>
+      <div class="dialogue-line">🐦 <b>Chim trống:</b> "Anh yêu em."</div>
+      <div class="dialogue-line">🐤 <b>Chim mái:</b> "Em cũng yêu anh."</div>
+      <div class="dialogue-line">🐣 <b>Lốp:</b> "Mình là con chim vừa tới. Mình là Lốp thôi!"</div>
+      <button class="game-btn" id="cutsceneNextBtn" style="margin-top:14px;font-size:16px;padding:10px 24px;">Tiếp tục</button>
+    </div>`;
+    document.getElementById('cutsceneNextBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      gameState = 'won';
+      updateOverlay();
+    });
+  } else if (gameState === 'won') {
+    overlay.innerHTML = `<div class="menu-panel">      <h1 style="margin:0 0 8px;font-size:32px;color:#ffd700;">🎉 YOU WIN 🎉</h1>
+      <p style="margin:0 0 12px;">Điểm: ${score}</p>
+      <button class="game-btn" id="level2Btn" style="background:#ff7043;border-color:#bf360c;box-shadow:0 4px 0 #8d2f0a, 0 6px 10px rgba(0,0,0,0.3);">🎮 Chơi màn 2</button>
+      <button class="dev-btn" id="restartBtn2">Chơi lại màn 1</button>
+      <button class="dev-btn" id="boardBtn3">🏆 Bảng xếp hạng</button>
+    </div>`;
+    document.getElementById('level2Btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetLevel2();
+      gameState = 'ready2';
+      updateOverlay();
+    });
+    document.getElementById('restartBtn2').addEventListener('click', (e) => { e.stopPropagation(); flap(); });
+    document.getElementById('boardBtn3').addEventListener('click', (e) => {
+      e.stopPropagation();
+      gameState = 'leaderboard';
+      renderLeaderboardPanel();
+    });
+  } else if (gameState === 'ready2') {
+    overlay.innerHTML = `<div class="menu-panel">
+      <h1 style="margin:0 0 10px;font-size:26px;">🎮 Màn 2: Không chiến!</h1>
+      <p style="margin:0 0 10px;font-size:13px;opacity:0.9;line-height:1.5;">
+        Chim của bạn tự động bắn liên tục.<br>
+        Dùng nút ▲ ▼ (hoặc SPACE / SHIFT) để né chim địch và đạn của chúng.<br>
+        Bạn có 3 tim — trúng đạn hoặc va chạm mất 1 tim, hết tim là thua.
+      </p>
+      <p style="margin:0 0 14px;font-size:22px;">❤️❤️❤️</p>
+      <button class="game-btn" id="start2Btn">Bắt đầu</button>
+    </div>`;
+    document.getElementById('start2Btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      gameState = 'playing2';
+      updateOverlay();
+    });
+  } else if (gameState === 'dead2') {
+    overlay.innerHTML = `<div class="menu-panel">
+      <h1 style="margin:0 0 8px;font-size:28px;">Bạn đã bị bắn hạ!</h1>
+      <p style="margin:0 0 12px;">Điểm màn 2: ${score2} | Cao nhất: ${best2}</p>
+      <button class="game-btn" id="restart2Btn">Chơi lại màn 2</button>
+      <button class="dev-btn" id="backTo1Btn">Về màn 1</button>
+    </div>`;
+    document.getElementById('restart2Btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetLevel2();
+      gameState = 'ready2';
+      updateOverlay();
+    });
+    document.getElementById('backTo1Btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetGame();
+    });
+  } else {
+    overlay.innerHTML = '';
+  }
+}
+
+function spawnPipe(gap) {
+  const margin = 60;
+  const topHeight = margin + Math.random() * (H - gap - margin * 2 - 100);
+  pipes.push({ x: W, top: topHeight, baseTop: topHeight, gap, seed: Math.random() * Math.PI * 2, passed: false });
+}
+
+function flap() {
+  if (gameState === 'ready') {
+    gameState = 'playing';
+    updateOverlay();
+    bird.vy = -6.8;
+    if (flyMode) holdUp = true;
+  } else if (gameState === 'playing') {
+    if (flyMode) { holdUp = true; } else { bird.vy = -6.8; }
+  } else if (gameState === 'dead' || gameState === 'won') {
+    resetGame();
+  } else if (gameState === 'playing2') {
+    holdUp = true;
+  } else if (gameState === 'dead2') {
+    resetLevel2();
+    gameState = 'ready2';
+    updateOverlay();
+  }
+}
+
+function dive() {
+  if (gameState === 'playing2') { holdDown = true; return; }
+  if (gameState !== 'playing') return;
+  if (flyMode) { holdDown = true; } else { bird.vy = 6.8; }
+}
+
+function getBirdRadius(s) {
+  if (s >= 50 && s < 70) return 19;
+  return 14;
+}
+
+function update() {
+  if (gameState !== 'playing') return;
+
+  frame++;
+  bird.r = getBirdRadius(score);
+
+  if (flyMode) {
+    const liftAccel = 0.55;
+    const maxFlySpeed = 4.2;
+    if (holdUp) bird.vy -= liftAccel;
+    else if (holdDown) bird.vy += liftAccel;
+    else bird.vy *= 0.9;
+    bird.vy = Math.max(-maxFlySpeed, Math.min(maxFlySpeed, bird.vy));
+  } else {
+    bird.vy += 0.32;
+  }
+  bird.y += bird.vy;
+  bird.rotation = Math.max(-0.5, Math.min(1.2, bird.vy * 0.12));
+
+  const stage = getStageConfig(score);
+  const effectiveSpeed = stage.speed + (speedMode ? 5 : 0);
+
+  if (frame % stage.interval === 0) spawnPipe(stage.gap);
+
+  for (const p of pipes) {
+    p.x -= effectiveSpeed;
+    if (stage.maze) {
+      const amp = 45;
+      const minTop = 40;
+      const maxTop = H - p.gap - 40 - 20;
+      const wobble = p.baseTop + Math.sin(frame * 0.035 + p.seed) * amp;
+      p.top = Math.max(minTop, Math.min(maxTop, wobble));
+    }
+    if (!p.passed && p.x + 60 < bird.x) {
+      p.passed = true;
+      score++;
+      if (score >= 150) {
+        win();
+        return;
+      }
+    }
+  }
+  pipes = pipes.filter(p => p.x > -60);
+
+  if (noclipMode) {
+    if (bird.y - bird.r < 0) bird.y = bird.r;
+    if (bird.y + bird.r > H - 20) bird.y = H - 20 - bird.r;
+  } else {
+    if (bird.y + bird.r > H - 20 || bird.y - bird.r < 0) {
+      die();
+    }
+    for (const p of pipes) {
+      const inX = bird.x + bird.r > p.x && bird.x - bird.r < p.x + 60;
+      const hitTop = bird.y - bird.r < p.top;
+      const hitBottom = bird.y + bird.r > p.top + p.gap;
+      if (inX && (hitTop || hitBottom)) {
+        die();
+      }
+    }
+  }
+}
+
+function die() {
+  if (gameState !== 'playing') return;
+  gameState = 'dead';
+  if (score > best) {
+    best = score;
+    localStorage.setItem('flappyBest', best);
+  }
+  submitScore(playerName, score);
+  updateOverlay();
+}
+
+function win() {
+  gameState = 'cutscene';
+  if (score > best) {
+    best = score;
+    localStorage.setItem('flappyBest', best);
+  }
+  submitScore(playerName, score);
+  updateOverlay();
+}
+
+// ---------- Level 2: shooter logic ----------
+function die2() {
+  gameState = 'dead2';
+  if (score2 > best2) {
+    best2 = score2;
+    localStorage.setItem('flappyBest2', best2);
+  }
+  updateOverlay();
+}
+
+function spawnEnemy2(px, py, vxOverride) {
+  const LH = getLH();
+  const ey = py !== undefined ? py : (40 + Math.random() * (LH - 100));
+  const ex = px !== undefined ? px : (getLW() + 20);
+  enemies2.push({
+    x: ex, y: ey,
+    vx: vxOverride !== undefined ? vxOverride : -(2 + Math.random() * 1.2),
+    shootTimer: 40 + Math.floor(Math.random() * 40),
+    hp: 1
+  });
+}
+
+function spawnBoss() {
+  const LW = getLW(), LH = getLH();
+  boss = {
+    x: LW - 110,
+    y: LH / 2,
+    hp: 67,
+    maxHp: 67,
+    baseY: LH / 2,
+    summonTimer: 200,
+    circleTimer: 130,
+    seed: Math.random() * Math.PI * 2
+  };
+}
+
+function update2() {
+  if (gameState !== 'playing2') return;
+  frame2++;
+
+  const LW = getLW(), LH = getLH();
+
+  const liftAccel = 0.55;
+  const maxSpeed = 4.2;
+  if (holdUp) p2.vy -= liftAccel;
+  else if (holdDown) p2.vy += liftAccel;
+  else p2.vy *= 0.9;
+  p2.vy = Math.max(-maxSpeed, Math.min(maxSpeed, p2.vy));
+  p2.y += p2.vy;
+  p2.y = Math.max(14, Math.min(LH - 34, p2.y));
+
+  if (invulTimer > 0) invulTimer--;
+
+  // ---- 30-điểm: đợt quái spam 20 giây (không tính điểm) ----
+  if (!waveTriggered && score2 >= 30) {
+    waveTriggered = true;
+    waveActive = true;
+    waveTimer = 1200; // ~20s @60fps
+  }
+  if (waveActive) {
+    waveTimer--;
+    if (waveTimer <= 0) waveActive = false;
+  }
+
+  // ---- 50-điểm: boss xuất hiện ----
+  if (!bossTriggered && score2 >= 50) {
+    bossTriggered = true;
+    waveActive = false;
+    enemies2 = [];
+    enemyBullets2 = [];
+    worldScale = 0.68;
+    spawnBoss();
+  }
+
+  // player auto-fire
+  const fireInterval = rapidMode ? 6 : 14;
+  if (frame2 % fireInterval === 0) {
+    bullets2.push({ x: p2.x + 16, y: p2.y, vx: 7, vy: 0 });
+  }
+  bullets2.forEach(b => { b.x += b.vx; b.y += (b.vy || 0); });
+  bullets2 = bullets2.filter(b => b.x < LW + 20 && b.x > -20 && b.y > -20 && b.y < LH + 20);
+
+  // ---- spawn quái thường (tạm dừng khi có boss) ----
+  if (!boss) {
+    const spawnInterval = waveActive ? 16 : Math.max(38, 70 - Math.floor(score2 / 5));
+    if (frame2 % spawnInterval === 0) spawnEnemy2();
+  }
+
+  enemies2.forEach(en => {
+    en.x += en.vx;
+    en.shootTimer--;
+    if (en.shootTimer <= 0 && en.x < LW - 10) {
+      enemyBullets2.push({ x: en.x, y: en.y, vx: -5, vy: 0 });
+      en.shootTimer = 70 + Math.floor(Math.random() * 50);
+    }
+  });
+  enemies2 = enemies2.filter(en => en.x > -40);
+
+  // ---- boss AI ----
+  if (boss) {
+    boss.y = boss.baseY + Math.sin(frame2 * 0.02 + boss.seed) * 60;
+    boss.summonTimer--;
+    boss.circleTimer--;
+
+    if (boss.summonTimer <= 0) {
+      spawnEnemy2(boss.x - 20, boss.y - 40, -2.4);
+      spawnEnemy2(boss.x - 20, boss.y + 40, -2.4);
+      boss.summonTimer = 260 + Math.floor(Math.random() * 80);
+    }
+    if (boss.circleTimer <= 0) {
+      const bulletCount = 14;
+      for (let i = 0; i < bulletCount; i++) {
+        const ang = (Math.PI * 2 * i) / bulletCount;
+        enemyBullets2.push({ x: boss.x, y: boss.y, vx: Math.cos(ang) * 3.4, vy: Math.sin(ang) * 3.4 });
+      }
+      boss.circleTimer = 150 + Math.floor(Math.random() * 40);
+    }
+  }
+
+  enemyBullets2.forEach(b => { b.x += b.vx; b.y += (b.vy || 0); });
+  enemyBullets2 = enemyBullets2.filter(b => b.x > -30 && b.x < LW + 30 && b.y > -30 && b.y < LH + 30);
+
+  // bullet vs enemy collisions
+  for (const b of bullets2) {
+    for (const en of enemies2) {
+      if (en.hp <= 0) continue;
+      const dx = b.x - en.x, dy = b.y - en.y;
+      if (Math.abs(dx) < 18 && Math.abs(dy) < 16) {
+        en.hp = 0;
+        b.x = -999;
+        if (!waveActive) score2++;
+      }
+    }
+    if (boss && b.x > -900) {
+      const dx = b.x - boss.x, dy = b.y - boss.y;
+      if (Math.abs(dx) < 46 && Math.abs(dy) < 40) {
+        boss.hp--;
+        b.x = -999;
+        if (boss.hp <= 0) {
+          score2 += 30;
+          boss = null;
+          worldScale = 1;
+        }
+      }
+    }
+  }
+  enemies2 = enemies2.filter(en => en.hp > 0);
+  bullets2 = bullets2.filter(b => b.x > -900);
+
+  if (invulTimer === 0) {
+    for (const en of enemies2) {
+      const dx = p2.x - en.x, dy = p2.y - en.y;
+      if (Math.abs(dx) < 20 && Math.abs(dy) < 18) {
+        en.hp = 0;
+        takeHit2();
+        break;
+      }
+    }
+  }
+  enemies2 = enemies2.filter(en => en.hp > 0);
+
+  if (invulTimer === 0 && boss) {
+    const dx = p2.x - boss.x, dy = p2.y - boss.y;
+    if (Math.abs(dx) < 50 && Math.abs(dy) < 44) {
+      takeHit2();
+    }
+  }
+
+  if (invulTimer === 0) {
+    for (const b of enemyBullets2) {
+      const dx = p2.x - b.x, dy = p2.y - b.y;
+      if (Math.abs(dx) < 16 && Math.abs(dy) < 14) {
+        b.x = -999;
+        takeHit2();
+        break;
+      }
+    }
+    enemyBullets2 = enemyBullets2.filter(b => b.x > -900);
+  }
+}
+
+function takeHit2() {
+  if (godHpMode) { invulTimer = 20; return; }
+  hearts--;
+  invulTimer = 70;
+  if (hearts <= 0) die2();
+}
+
+function drawPterodactylBoss(b) {
+  const s = 1;
+  ctx.save();
+  ctx.translate(b.x, b.y);
+
+  // wings
+  ctx.fillStyle = '#5d4037';
+  ctx.strokeStyle = '#2e1a0f';
+  ctx.lineWidth = 2;
+  const flap = Math.sin(frame2 * 0.15) * 14;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(55 * s, -30 * s - flap);
+  ctx.lineTo(30 * s, 6 * s);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(55 * s, 30 * s + flap);
+  ctx.lineTo(30 * s, -6 * s);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // body
+  ctx.fillStyle = '#6d4c41';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 34 * s, 20 * s, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // head (facing left, toward player)
+  ctx.fillStyle = '#795548';
+  ctx.beginPath();
+  ctx.moveTo(-30 * s, -6 * s);
+  ctx.lineTo(-64 * s, -2 * s);
+  ctx.lineTo(-30 * s, 12 * s);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // eye
+  ctx.fillStyle = '#ff1744';
+  ctx.beginPath();
+  ctx.arc(-32 * s, -4 * s, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // crest
+  ctx.fillStyle = '#4e342e';
+  ctx.beginPath();
+  ctx.moveTo(-26 * s, -10 * s);
+  ctx.lineTo(-16 * s, -26 * s);
+  ctx.lineTo(-10 * s, -8 * s);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+
+  // health bar (fixed screen space, drawn separately in HUD)
+}
+
+function drawLevel2() {
+  const LW = getLW(), LH = getLH();
+
+  ctx.save();
+  ctx.scale(worldScale, worldScale);
+
+  ctx.fillStyle = boss ? '#2a0a3a' : '#1b1440';
+  ctx.fillRect(0, 0, LW, LH);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  for (let i = 0; i < 50; i++) {
+    const sx = (i * 53 + frame2 * 0.8) % LW;
+    const sy = (i * 97) % LH;
+    ctx.fillRect(sx, sy, 2, 2);
+  }
+
+  bullets2.forEach(b => {
+    ctx.fillStyle = '#ffeb3b';
+    ctx.beginPath();
+    ctx.ellipse(b.x, b.y, 7, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  enemyBullets2.forEach(b => {
+    ctx.fillStyle = '#ff1744';
+    ctx.beginPath();
+    ctx.ellipse(b.x, b.y, 6, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  enemies2.forEach(en => {
+    drawBirdAt(en.x, en.y, SKINS[1], 1, true);
+  });
+
+  if (boss) drawPterodactylBoss(boss);
+
+  const blink = invulTimer > 0 && Math.floor(invulTimer / 5) % 2 === 0;
+  ctx.save();
+  ctx.globalAlpha = (blink && !godHpMode) ? 0.35 : 1;
+  drawBirdAt(p2.x, p2.y, SKINS[skinIndex] || SKINS[0], 1);
+  ctx.restore();
+
+  ctx.restore();
+
+  // ---- HUD (không bị ảnh hưởng bởi zoom) ----
+  ctx.font = '22px Arial';
+  ctx.textAlign = 'left';
+  let heartStr = '';
+  if (godHpMode) {
+    heartStr = '💜💜💜';
+  } else {
+    for (let i = 0; i < 3; i++) heartStr += i < hearts ? '❤️' : '🖤';
+  }
+  ctx.fillText(heartStr, 12, 34);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'white';
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 3;
+  ctx.font = 'bold 22px Arial';
+  ctx.strokeText('Điểm: ' + score2, W - 12, 32);
+  ctx.fillText('Điểm: ' + score2, W - 12, 32);
+  ctx.textAlign = 'left';
+
+  if (waveActive) {
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 15px Arial';
+    ctx.fillStyle = '#ff5252';
+    ctx.strokeText('⚠ ĐỢT QUÁI - Không tính điểm!', W / 2, 58);
+    ctx.fillText('⚠ ĐỢT QUÁI - Không tính điểm!', W / 2, 58);
+    ctx.textAlign = 'left';
+  }
+
+  if (boss) {
+    const barW = W - 40, barH = 14, barX = 20, barY = 44;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(barX, barY, barW, barH);
+    ctx.fillStyle = '#e53935';
+    ctx.fillRect(barX, barY, barW * Math.max(0, boss.hp / boss.maxHp), barH);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(barX, barY, barW, barH);
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillStyle = 'white';
+    ctx.fillText('BOSS - Khủng long bay', W / 2, barY - 4);
+    ctx.textAlign = 'left';
+  }
+}
+
+
+function drawBackground(stage) {
+  if (stage.sky === 'red') {
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#c0392b');
+    sky.addColorStop(1, '#e17055');
+    ctx.fillStyle = sky;
+  } else {
+    ctx.fillStyle = '#70c5ce';
+  }
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = stage.sky === 'red' ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.6)';
+  for (let i = 0; i < 3; i++) {
+    const cx = ((frame * 0.3 + i * 150) % (W + 100)) - 50;
+    ctx.beginPath();
+    ctx.arc(cx, 80 + i * 60, 20, 0, Math.PI * 2);
+    ctx.arc(cx + 20, 75 + i * 60, 25, 0, Math.PI * 2);
+    ctx.arc(cx + 45, 80 + i * 60, 18, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = stage.danger ? '#7f3b2b' : '#ded895';
+  ctx.fillRect(0, H - 20, W, 20);
+  ctx.fillStyle = stage.danger ? '#5c2a1f' : '#c9c17a';
+  ctx.fillRect(0, H - 20, W, 4);
+}
+
+function drawPipes(stage) {
+  const pipeColor = stage.danger ? '#c0392b' : '#4caf50';
+  const pipeEdge = stage.danger ? '#7f2016' : '#2e7d32';
+  for (const p of pipes) {
+    ctx.fillStyle = pipeColor;
+    ctx.strokeStyle = pipeEdge;
+    ctx.lineWidth = 3;
+    ctx.fillRect(p.x, 0, 60, p.top);
+    ctx.strokeRect(p.x, 0, 60, p.top);
+    ctx.fillRect(p.x - 5, p.top - 20, 70, 20);
+    ctx.strokeRect(p.x - 5, p.top - 20, 70, 20);
+    const bottomY = p.top + p.gap;
+    ctx.fillRect(p.x, bottomY, 60, H - bottomY - 20);
+    ctx.strokeRect(p.x, bottomY, 60, H - bottomY - 20);
+    ctx.fillRect(p.x - 5, bottomY, 70, 20);
+    ctx.strokeRect(p.x - 5, bottomY, 70, 20);
+  }
+}
+
+function getSkinFill(skin, r) {
+  if (skin.special === 'rainbow') {
+    const hue = (frame * 3) % 360;
+    return `hsl(${hue}, 85%, 60%)`;
+  }
+  if (skin.special === 'gold') {
+    const g = ctx.createLinearGradient(-r, -r, r, r);
+    g.addColorStop(0, '#fff6cc');
+    g.addColorStop(0.5, '#ffd700');
+    g.addColorStop(1, '#b8860b');
+    return g;
+  }
+  if (skin.special === 'galaxy') {
+    const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 1, 0, 0, r);
+    g.addColorStop(0, '#9c5cff');
+    g.addColorStop(1, '#1a0033');
+    return g;
+  }
+  return skin.body;
+}
+
+function drawBird() {
+  const skin = SKINS[skinIndex] || SKINS[0];
+  ctx.save();
+  ctx.translate(bird.x, bird.y);
+  ctx.rotate(bird.rotation);
+
+  if (noclipMode) ctx.globalAlpha = 0.6;
+
+  ctx.fillStyle = getSkinFill(skin, bird.r);
+  ctx.strokeStyle = skin.dark;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, bird.r, bird.r * 0.8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (skin.special === 'galaxy') {
+    ctx.save();
+    ctx.clip();
+    ctx.fillStyle = 'white';
+    const stars = [[-6, -3, 1.2], [3, 5, 1], [-2, 6, 0.8], [6, -1, 1], [0, -6, 0.9]];
+    stars.forEach(([sx, sy, sr]) => {
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = skin.wing;
+  ctx.beginPath();
+  ctx.ellipse(-2, 4, 7, 5, Math.PI / 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(6, -4, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'black';
+  ctx.beginPath();
+  ctx.arc(7.5, -4, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = skin.beak;
+  ctx.beginPath();
+  ctx.moveTo(bird.r - 2, -2);
+  ctx.lineTo(bird.r + 8, 1);
+  ctx.lineTo(bird.r - 2, 5);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawBirdAt(x, y, skin, rScale, flip) {
+  const r = 14 * rScale;
+  ctx.save();
+  ctx.translate(x, y);
+  if (flip) ctx.scale(-1, 1);
+
+  ctx.fillStyle = skin.body;
+  ctx.strokeStyle = skin.dark;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, r, r * 0.8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = skin.wing;
+  ctx.beginPath();
+  ctx.ellipse(-2, 4, r * 0.5, r * 0.36, Math.PI / 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(r * 0.43, -r * 0.29, r * 0.29, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'black';
+  ctx.beginPath();
+  ctx.arc(r * 0.54, -r * 0.29, r * 0.14, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = skin.beak;
+  ctx.beginPath();
+  ctx.moveTo(r - 2, -2);
+  ctx.lineTo(r + 8, 1);
+  ctx.lineTo(r - 2, 5);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawEndingBirds() {
+  const maleSkin = SKINS[2];
+  const femaleSkin = SKINS[4];
+  const mx = Math.min(bird.x + 55, W - 30);
+  const my = bird.y - 6;
+  const fx = Math.min(bird.x + 88, W - 15);
+  const fy = bird.y + 8;
+  drawBirdAt(mx, my, maleSkin, 1);
+  drawBirdAt(fx, fy, femaleSkin, 0.9);
+  ctx.fillStyle = '#ff4fa3';
+  ctx.font = '16px Arial';
+  ctx.fillText('💕', (mx + fx) / 2, Math.min(my, fy) - 14);
+}
+
+function drawScore(stage) {
+  if (gameState === 'playing') {
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 3;
+    ctx.font = 'bold 36px Arial';
+    ctx.textAlign = 'center';
+    ctx.strokeText(score, W / 2, 60);
+    ctx.fillText(score, W / 2, 60);
+    if (stage.maze) {
+      ctx.font = 'bold 14px Arial';
+      ctx.fillStyle = '#ffeb3b';
+      ctx.strokeText('BOSS / MAZE', W / 2, 82);
+      ctx.fillText('BOSS / MAZE', W / 2, 82);
+    }
+  }
+}
+
+function loop() {
+  if (gameState === 'playing2' || gameState === 'dead2') {
+    update2();
+    drawLevel2();
+  } else {
+    update();
+    const stage = getStageConfig(score);
+    drawBackground(stage);
+    drawPipes(stage);
+    drawBird();
+    drawScore(stage);
+  }
+  requestAnimationFrame(loop);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); flap(); }
+  if (e.key === 'Shift') { dive(); }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space') holdUp = false;
+  if (e.key === 'Shift') holdDown = false;
+});
+
+canvas.addEventListener('mousedown', () => {
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+    document.activeElement.blur();
+    return;
+  }
+  flap();
+});
+canvas.addEventListener('mouseup', () => { holdUp = false; });
+canvas.addEventListener('mouseleave', () => { holdUp = false; });
+canvas.addEventListener('touchstart', (e) => {
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+    document.activeElement.blur();
+    e.preventDefault();
+    return;
+  }
+  e.preventDefault();
+  flap();
+});
+canvas.addEventListener('touchend', () => { holdUp = false; });
+
+const upBtn = document.getElementById('upBtn');
+const downBtn = document.getElementById('downBtn');
+
+function pressUp(e) { e.preventDefault(); e.stopPropagation(); flap(); }
+function releaseUp(e) { if (e) e.preventDefault(); holdUp = false; }
+function pressDown(e) { e.preventDefault(); e.stopPropagation(); dive(); }
+function releaseDown(e) { if (e) e.preventDefault(); holdDown = false; }
+
+upBtn.addEventListener('mousedown', pressUp);
+upBtn.addEventListener('touchstart', pressUp, { passive: false });
+upBtn.addEventListener('mouseup', releaseUp);
+upBtn.addEventListener('mouseleave', releaseUp);
+upBtn.addEventListener('touchend', releaseUp);
+
+downBtn.addEventListener('mousedown', pressDown);
+downBtn.addEventListener('touchstart', pressDown, { passive: false });
+downBtn.addEventListener('mouseup', releaseDown);
+downBtn.addEventListener('mouseleave', releaseDown);
+downBtn.addEventListener('touchend', releaseDown);
+
+resetGame();
+loop();
+</script>
+</body>
+</html>
